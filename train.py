@@ -18,7 +18,7 @@ import os
 import wandb
 
 model = MusicGen.get_pretrained('small')
-model.lm = model.lm.to(torch.float32) 
+model.lm = model.lm.to(torch.float32) #important, right when I was about to give up until god helped me
 
 class AudioDataset(Dataset):
     def __init__(self, 
@@ -70,7 +70,7 @@ num_epochs = 10000
 inference_step = 50
 do_inference = False # doesnt works atm
 
-save_step = 400
+save_step = 50
 save_models = True
 
 def count_nans(tensor):
@@ -119,25 +119,6 @@ def one_hot_encode(tensor, num_classes=2048):
 
 duration = 30
 
-use_sampling = False
-top_k = 250
-top_p = 0.0
-temperature = 1.0
-cfg_coef = 3.0
-two_step_cfg = False
-
-frame_rate = 32000
-
-generation_params = {
-    'max_gen_len': int(duration * frame_rate),
-    'use_sampling': use_sampling,
-    'temp': temperature,
-    'top_k': top_k,
-    'top_p': top_p,
-    'cfg_coef': cfg_coef,
-    'two_step_cfg': two_step_cfg,
-}
-
 current_step = 0
 
 for epoch in range(num_epochs):
@@ -169,20 +150,24 @@ for epoch in range(num_epochs):
                 condition_tensors=condition_tensors
             )
 
-            logits = fixnan(lm_output.logits)
             codes = codes[0]
-            probs_codes = one_hot_encode(codes, num_classes=2048)
-            logits = logits[0]
-            probs_codes = probs_codes.cuda()
-            loss = criterion(logits, probs_codes)
+            logits = lm_output.logits[0]
+            mask = lm_output.mask[0]
 
-        print("Right after compute predictions")
-        print(f"Number of nans in logits: {count_nans(lm_output.logits)}")
-        print(f"Total number of logits: {lm_output.logits.numel()}")
-        nan_percentage = count_nans(lm_output.logits) / lm_output.logits.numel()
-        print(f"Percentage of nans: {nan_percentage}")
-        print("If less than 25,000, its ok")
-        #the nan thing has something to do with special tokens. I think they can be removed but would have to modify compute_predictions functions. Also, it only affects the last bottom layers of the tensor, so it shouldn't have much influence, we just change it to 0 to avoid problems.
+            codes = one_hot_encode(codes, num_classes=2048)
+
+            codes = codes.cuda()
+            logits = logits.cuda()
+            mask = mask.cuda()
+
+            mask = mask.view(-1)
+            masked_logits = logits.view(-1, 2048)[mask]
+            masked_codes = codes.view(-1, 2048)[mask]
+
+            loss = criterion(masked_logits,masked_codes)
+
+        assert count_nans(masked_logits) == 0
+        
         scaler.scale(loss).backward()
 
         scaler.unscale_(optimizer)
@@ -194,7 +179,6 @@ for epoch in range(num_epochs):
         print(f"Epoch: {epoch}/{num_epochs}, Batch: {batch_idx}/{len(train_dataloader)}, Loss: {loss.item()}")
         run.log({
             "loss": loss.item(),
-            "nan_percentage": nan_percentage,
             "step": current_step,
         })
 

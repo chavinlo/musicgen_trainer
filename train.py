@@ -1,6 +1,5 @@
 import torchaudio
 from audiocraft.models import MusicGen
-from audiocraft.data.audio import audio_write
 import torch
 import torch
 import torch.nn as nn
@@ -15,15 +14,10 @@ from audiocraft.modules.conditioners import (
 
 import os
 
-import wandb
-
-model = MusicGen.get_pretrained('small')
-model.lm = model.lm.to(torch.float32) #important, right when I was about to give up until god helped me
-
 class AudioDataset(Dataset):
     def __init__(self, 
-                 data_dir
-                 ):
+                data_dir
+                ):
         self.data_dir = data_dir
         self.data_map = []
 
@@ -48,30 +42,6 @@ class AudioDataset(Dataset):
         label = data['label']
 
         return audio, label
-    
-dataset = AudioDataset('/home/ubuntu/dataset')
-train_dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
-
-learning_rate = 0.0001
-model.lm.train()
-
-scaler = torch.cuda.amp.GradScaler()
-
-#from paper
-optimizer = AdamW(model.lm.parameters(), lr=learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
-
-criterion = nn.CrossEntropyLoss()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-run = wandb.init(project='audiocraft')
-
-num_epochs = 10000
-
-inference_step = 50
-do_inference = False # doesnt works atm
-
-save_step = 50
-save_models = True
 
 def count_nans(tensor):
     nan_mask = torch.isnan(tensor)
@@ -117,73 +87,114 @@ def one_hot_encode(tensor, num_classes=2048):
 
     return one_hot
 
-duration = 30
+def train(
+        dataset_path: str,
+        model_id: str,
+        lr: float,
+        epochs: int,
+        use_wandb: bool,
+        save_step: int = None,
+):
+    
+    if use_wandb is True:
+        import wandb
+        run = wandb.init(project='audiocraft')
 
-current_step = 0
-
-for epoch in range(num_epochs):
-    for batch_idx, (audio, label) in enumerate(train_dataloader):
-        optimizer.zero_grad()
-
-        #where audio and label are just paths
-        audio = audio[0]
-        label = label[0]
-
-        audio = preprocess_audio(audio, model) #returns tensor
-        text = open(label, 'r').read().strip()
-
-        attributes, _ = model._prepare_tokens_and_attributes([text], None)
-
-        conditions = attributes
-        null_conditions = ClassifierFreeGuidanceDropout(p=1.0)(conditions)
-        conditions = conditions + null_conditions
-        tokenized = model.lm.condition_provider.tokenize(conditions)
-        cfg_conditions = model.lm.condition_provider(tokenized)
-        condition_tensors = cfg_conditions
-
-        codes = torch.cat([audio, audio], dim=0)
-
-        with torch.autocast(device_type="cuda", dtype=torch.float16):
-            lm_output = model.lm.compute_predictions(
-                codes=codes,
-                conditions=[],
-                condition_tensors=condition_tensors
-            )
-
-            codes = codes[0]
-            logits = lm_output.logits[0]
-            mask = lm_output.mask[0]
-
-            codes = one_hot_encode(codes, num_classes=2048)
-
-            codes = codes.cuda()
-            logits = logits.cuda()
-            mask = mask.cuda()
-
-            mask = mask.view(-1)
-            masked_logits = logits.view(-1, 2048)[mask]
-            masked_codes = codes.view(-1, 2048)[mask]
-
-            loss = criterion(masked_logits,masked_codes)
-
-        assert count_nans(masked_logits) == 0
+    model = MusicGen.get_pretrained(model_id)
+    model.lm = model.lm.to(torch.float32) #important
         
-        scaler.scale(loss).backward()
+    dataset = AudioDataset(dataset_path)
+    train_dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
-        scaler.unscale_(optimizer)
-        torch.nn.utils.clip_grad_norm_(model.lm.parameters(), 1.0)
+    learning_rate = lr
+    model.lm.train()
 
-        scaler.step(optimizer)
-        scaler.update()
+    scaler = torch.cuda.amp.GradScaler()
 
-        print(f"Epoch: {epoch}/{num_epochs}, Batch: {batch_idx}/{len(train_dataloader)}, Loss: {loss.item()}")
-        run.log({
-            "loss": loss.item(),
-            "step": current_step,
-        })
+    #from paper
+    optimizer = AdamW(model.lm.parameters(), lr=learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
 
-        current_step += 1
+    criterion = nn.CrossEntropyLoss()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        if save_models:
-            if current_step % save_step == 0:
-                torch.save(model.lm.state_dict(), f"saved_models/lm_{current_step}.pt")
+    num_epochs = epochs
+
+    save_step = save_step
+    save_models = False if save_step is None else True
+
+    save_path = "models/"
+
+    os.makedirs(save_path, exist_ok=True)
+
+    current_step = 0
+
+    for epoch in range(num_epochs):
+        for batch_idx, (audio, label) in enumerate(train_dataloader):
+            optimizer.zero_grad()
+
+            #where audio and label are just paths
+            audio = audio[0]
+            label = label[0]
+
+            audio = preprocess_audio(audio, model) #returns tensor
+            text = open(label, 'r').read().strip()
+
+            attributes, _ = model._prepare_tokens_and_attributes([text], None)
+
+            conditions = attributes
+            null_conditions = ClassifierFreeGuidanceDropout(p=1.0)(conditions)
+            conditions = conditions + null_conditions
+            tokenized = model.lm.condition_provider.tokenize(conditions)
+            cfg_conditions = model.lm.condition_provider(tokenized)
+            condition_tensors = cfg_conditions
+
+            codes = torch.cat([audio, audio], dim=0)
+
+            with torch.autocast(device_type="cuda", dtype=torch.float16):
+                lm_output = model.lm.compute_predictions(
+                    codes=codes,
+                    conditions=[],
+                    condition_tensors=condition_tensors
+                )
+
+                codes = codes[0]
+                logits = lm_output.logits[0]
+                mask = lm_output.mask[0]
+
+                codes = one_hot_encode(codes, num_classes=2048)
+
+                codes = codes.cuda()
+                logits = logits.cuda()
+                mask = mask.cuda()
+
+                mask = mask.view(-1)
+                masked_logits = logits.view(-1, 2048)[mask]
+                masked_codes = codes.view(-1, 2048)[mask]
+
+                loss = criterion(masked_logits,masked_codes)
+
+            assert count_nans(masked_logits) == 0
+            
+            scaler.scale(loss).backward()
+
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.lm.parameters(), 1.0)
+
+            scaler.step(optimizer)
+            scaler.update()
+
+            print(f"Epoch: {epoch}/{num_epochs}, Batch: {batch_idx}/{len(train_dataloader)}, Loss: {loss.item()}")
+
+            if use_wandb is True:
+                run.log({
+                    "loss": loss.item(),
+                    "step": current_step,
+                })
+
+            current_step += 1
+
+            if save_models:
+                if current_step % save_step == 0:
+                    torch.save(model.lm.state_dict(), f"{save_path}/lm_{current_step}.pt")
+
+    torch.save(model.lm.state_dict(), f"{save_path}/lm_final.pt")

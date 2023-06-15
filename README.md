@@ -22,7 +22,7 @@ Run `python3 run.py --dataset /home/ubuntu/dataset`, replace `/home/ubuntu/datas
 ### Options
 
 - `dataset_path`: String, path to your dataset with WAV and TXT pairs.
-- `model_id`: String, MusicGen model to use. Can be `small`/`medium`/`large`. Default: `medium`
+- `model_id`: String, MusicGen model to use. Can be `small`/`medium`/`large`. Default: `small`
 - `lr`: Float, learning rate. Default: `0.0001`/`1e-4`
 - `epochs`: Integer, epoch count. Default: `5`
 - `use_wandb`: Integer, `1` to enable wandb, `0` to disable it. Default: `0` = Disabled

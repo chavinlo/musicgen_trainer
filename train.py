@@ -18,7 +18,7 @@ import os
 import wandb
 
 model = MusicGen.get_pretrained('small')
-model.lm = model.lm.to(torch.float32) #important, right when I was about to give up until god helped me
+model.lm = model.lm.to(torch.float32) 
 
 class AudioDataset(Dataset):
     def __init__(self, 

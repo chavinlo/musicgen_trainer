@@ -80,3 +80,5 @@ Overfit -> Generate -> Decode: https://voca.ro/1hJGVdxsvBOG
       journal={arXiv preprint arXiv:2306.05284},
 }
 ```
+
+Special thanks to elyxlz (223864514326560768@discord) for helping me with the masks.

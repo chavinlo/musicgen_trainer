@@ -3,7 +3,7 @@
 This is a trainer for MusicGen model. Currently it's very basic but I'll add more features soon.
 
 ## STATUS: WORKING
-More information on the current training quality on the experiments section
+More information on the current training quality on the [experiments section](#experiments)
 
 ## Usage
 

@@ -2,7 +2,12 @@
 
 This is a trainer for MusicGen model. Currently it's very basic but I'll add more features soon.
 
-## STATUS: WORKING
+## STATUS: working... sortof (overfit only)
+
+So far it only works as a poc for overfit... yeah I only tested this in overfits and it was 3am when I pushed it here... although I think the main reason is data:
+
+![](https://i.imgur.com/pjoGIIo.png)
+
 More information on the current training quality on the [experiments section](#experiments)
 
 ## Usage

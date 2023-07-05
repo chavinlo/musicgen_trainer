@@ -9,7 +9,7 @@ parser.add_argument('--lr', type=float, required=False, default=0.0001)
 parser.add_argument('--epochs', type=int, required=False, default=5)
 parser.add_argument('--use_wandb', type=int, required=False, default=0)
 parser.add_argument('--save_step', type=int, required=False, default=None)
-parser.add_argument('--no_audio', type=int, required=False, default=0)
+parser.add_argument('--no_label', type=int, required=False, default=0)
 parser.add_argument('--tune_text', type=int, required=False, default=0)
 args = parser.parse_args()
 
@@ -20,6 +20,6 @@ train(
     epochs=args.epochs,
     use_wandb=args.use_wandb,
     save_step=args.save_step,
-    no_audio=args.no_audio,
+    no_label=args.no_label,
     tune_text=args.tune_text
 )

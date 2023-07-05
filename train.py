@@ -107,12 +107,12 @@ def train(
         save_step: int = None
 ):
     
-    if use_wandb is True:
+    if bool(use_wandb) is True:
         import wandb
         run = wandb.init(project='audiocraft')
 
     model = MusicGen.get_pretrained(model_id)
-    model.lm = model.lm.to(torch.float32) #important
+    model.lm = model.lm.to(torch.float32)  # important
         
     dataset = AudioDataset(dataset_path, no_label=no_label)
     train_dataloader = DataLoader(dataset, batch_size=1, shuffle=True)

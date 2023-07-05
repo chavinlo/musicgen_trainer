@@ -59,13 +59,13 @@ def preprocess_audio(audio_path, model: MusicGen, duration: int = 30):
     wav, sr = torchaudio.load(audio_path)
     wav = torchaudio.functional.resample(wav, sr, model.sample_rate)
     wav = wav.mean(dim=0, keepdim=True)
+    if wav.shape[1] < model.sample_rate * duration:
+        return None
     end_sample = int(model.sample_rate * duration)
     start_sample = random.randrange(0, wav.shape[1] - end_sample)
     wav = wav[:, start_sample:start_sample+end_sample]
 
     assert wav.shape[0] == 1
-    if wav.shape[1] != model.sample_rate * duration:
-        return None
 
     wav = wav.cuda()
     wav = wav.unsqueeze(1)

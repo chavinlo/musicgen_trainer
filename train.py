@@ -194,13 +194,15 @@ def train(
 
                 loss = criterion(masked_logits,masked_codes)
             
+            current_step += 1 / grad_acc
+                        
             if use_wandb is True:
                 run.log({
                     "loss": loss.item(),
                     "step": current_step,
                 })
             
-            current_step += 1 / grad_acc
+            print(f"Epoch: {epoch}/{num_epochs}, Batch: {batch_idx}/{len(train_dataloader)}, Loss: {loss.item()}")
 
             # assert count_nans(masked_logits) == 0
 
@@ -219,9 +221,6 @@ def train(
             else:
                 optimizer.step()
             scheduler.step()
-
-            print(f"Epoch: {epoch}/{num_epochs}, Batch: {batch_idx}/{len(train_dataloader)}, Loss: {loss.item()}")
-
 
             if save_models:
                 if current_step = int(current_step) and int(current_step) % save_step == 0:

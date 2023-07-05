@@ -105,7 +105,9 @@ def train(
         no_label: bool = False,
         tune_text: bool = False,
         save_step: int = None,
-        grad_acc: int = 8
+        grad_acc: int = 8,
+        use_scaler: bool = False,
+        weight_decay: float = 1e-5
 ):
     
     if bool(use_wandb) is True:
@@ -125,7 +127,7 @@ def train(
 
     #from paper
     optimizer = AdamW(model.lm.condition_provider.parameters() if tune_text else model.lm.parameters(),
-                      lr=learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
+                      lr=learning_rate, betas=(0.9, 0.95), weight_decay=wd)
 
     criterion = nn.CrossEntropyLoss()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -189,17 +191,21 @@ def train(
                 loss = criterion(masked_logits,masked_codes)
 
             # assert count_nans(masked_logits) == 0
-            
-            scaler.scale(loss).backward()
+
+            (scaler.scale(loss) if use_scaler else loss).backward()
 
             if batch_idx % grad_acc != grad_acc - 1:
                 continue
-            
-            scaler.unscale_(optimizer)
+
+            if use_scaler:
+                scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.lm.parameters(), 0.5)
 
-            scaler.step(optimizer)
-            scaler.update()
+            if use_scaler:
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                optimizer.step()
 
             print(f"Epoch: {epoch}/{num_epochs}, Batch: {batch_idx}/{len(train_dataloader)}, Loss: {loss.item()}")
 

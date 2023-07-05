@@ -17,7 +17,7 @@ import os
 class AudioDataset(Dataset):
     def __init__(self, 
                  data_dir,
-                 no_audio=False
+                 no_label=False
                  ):
         self.data_dir = data_dir
         self.data_map = []
@@ -26,7 +26,7 @@ class AudioDataset(Dataset):
         for d in dir_map:
             name, ext = os.path.splitext(d)
             if ext == '.wav':
-                if no_audio:
+                if no_label:
                     self.data_map.append({
                         "audio": os.path.join(data_dir, d)
                     })
@@ -109,7 +109,7 @@ def train(
     model = MusicGen.get_pretrained(model_id)
     model.lm = model.lm.to(torch.float32) #important
         
-    dataset = AudioDataset(dataset_path)
+    dataset = AudioDataset(dataset_path, no_label=True)
     train_dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
     learning_rate = lr

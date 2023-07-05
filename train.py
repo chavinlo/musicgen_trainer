@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
+import random
 
 from torch.utils.data import Dataset
     
@@ -59,10 +60,12 @@ def preprocess_audio(audio_path, model: MusicGen, duration: int = 30):
     wav = torchaudio.functional.resample(wav, sr, model.sample_rate)
     wav = wav.mean(dim=0, keepdim=True)
     end_sample = int(model.sample_rate * duration)
-    wav = wav[:, :end_sample]
+    start_sample = random.randrange(0, wav.shape[1] - end_sample)
+    wav = wav[:, start_sample:start_sample+end_sample]
 
     assert wav.shape[0] == 1
-    assert wav.shape[1] == model.sample_rate * duration
+    if wav.shape[1] != model.sample_rate * duration:
+        return None
 
     wav = wav.cuda()
     wav = wav.unsqueeze(1)
@@ -146,6 +149,8 @@ def train(
             label = label[0]
 
             audio = preprocess_audio(audio, model) #returns tensor
+            if audio is None:
+                continue
             text = open(label, 'r').read().strip() if label else ""
 
             attributes, _ = model._prepare_tokens_and_attributes([text], None)

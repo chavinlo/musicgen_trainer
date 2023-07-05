@@ -223,7 +223,7 @@ def train(
             scheduler.step()
 
             if save_models:
-                if current_step = int(current_step) and int(current_step) % save_step == 0:
+                if current_step == int(current_step) and int(current_step) % save_step == 0:
                     torch.save(model.lm.state_dict(), f"{save_path}/lm_{current_step}.pt")
 
     torch.save(model.lm.state_dict(), f"{save_path}/lm_final.pt")

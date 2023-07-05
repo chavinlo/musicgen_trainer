@@ -128,7 +128,7 @@ def train(
 
     #from paper
     optimizer = AdamW(model.lm.condition_provider.parameters() if tune_text else model.lm.parameters(),
-                      lr=learning_rate, betas=(0.9, 0.95), weight_decay=wd)
+                      lr=learning_rate, betas=(0.9, 0.95), weight_decay=weight_decay)
     scheduler = get_scheduler("cosine", optimizer, 50, int(epochs * len(train_dataloader) / grad_acc))
 
     criterion = nn.CrossEntropyLoss()

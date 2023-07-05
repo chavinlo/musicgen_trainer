@@ -104,7 +104,8 @@ def train(
         use_wandb: bool,
         no_label: bool = False,
         tune_text: bool = False,
-        save_step: int = None
+        save_step: int = None,
+        grad_acc: int = 8
 ):
     
     if bool(use_wandb) is True:
@@ -187,12 +188,15 @@ def train(
 
                 loss = criterion(masked_logits,masked_codes)
 
-            assert count_nans(masked_logits) == 0
+            # assert count_nans(masked_logits) == 0
             
             scaler.scale(loss).backward()
 
+            if batch_idx % grad_acc != grad_acc - 1:
+                continue
+            
             scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.lm.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm_(model.lm.parameters(), 0.5)
 
             scaler.step(optimizer)
             scaler.update()

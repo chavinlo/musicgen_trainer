@@ -100,8 +100,8 @@ def train(
         epochs: int,
         use_wandb: bool,
         no_label: bool = False,
-        tune_text: bool = False
-        save_step: int = None,
+        tune_text: bool = False,
+        save_step: int = None
 ):
     
     if use_wandb is True:

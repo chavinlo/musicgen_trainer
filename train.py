@@ -99,6 +99,8 @@ def train(
         lr: float,
         epochs: int,
         use_wandb: bool,
+        no_label: bool = False,
+        tune_text: bool = False
         save_step: int = None,
 ):
     
@@ -109,7 +111,7 @@ def train(
     model = MusicGen.get_pretrained(model_id)
     model.lm = model.lm.to(torch.float32) #important
         
-    dataset = AudioDataset(dataset_path, no_label=True)
+    dataset = AudioDataset(dataset_path, no_label=no_label)
     train_dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
     learning_rate = lr
@@ -118,7 +120,8 @@ def train(
     scaler = torch.cuda.amp.GradScaler()
 
     #from paper
-    optimizer = AdamW(model.lm.parameters(), lr=learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
+    optimizer = AdamW(model.lm.condition_provider if tune_text else model.lm.parameters(),
+                      lr=learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
 
     criterion = nn.CrossEntropyLoss()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -143,7 +146,7 @@ def train(
             label = label[0]
 
             audio = preprocess_audio(audio, model) #returns tensor
-            text = open(label, 'r').read().strip()
+            text = open(label, 'r').read().strip() if label else ""
 
             attributes, _ = model._prepare_tokens_and_attributes([text], None)
 

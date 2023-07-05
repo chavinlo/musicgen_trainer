@@ -12,6 +12,7 @@ parser.add_argument('--save_step', type=int, required=False, default=None)
 parser.add_argument('--no_label', type=int, required=False, default=0)
 parser.add_argument('--tune_text', type=int, required=False, default=0)
 parser.add_argument('--weight_decay', type=float, required=False, default=1e-5)
+parser.add_argument('--grad_acc', type=int, required=False, default=3)
 args = parser.parse_args()
 
 train(
@@ -23,5 +24,6 @@ train(
     save_step=args.save_step,
     no_label=args.no_label,
     tune_text=args.tune_text,
-    weight_decay=args.weight_decay
+    weight_decay=args.weight_decay,
+    grad_acc=args.grad_acc,
 )

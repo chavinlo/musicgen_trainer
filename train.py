@@ -1,5 +1,6 @@
 import torchaudio
 from audiocraft.models import MusicGen
+from transformers import get_scheduler
 import torch
 import torch
 import torch.nn as nn
@@ -128,6 +129,7 @@ def train(
     #from paper
     optimizer = AdamW(model.lm.condition_provider.parameters() if tune_text else model.lm.parameters(),
                       lr=learning_rate, betas=(0.9, 0.95), weight_decay=wd)
+    scheduler = get_scheduler("cosine", optimizer, 50, int(epochs * len(train_dataloader) / grad_acc))
 
     criterion = nn.CrossEntropyLoss()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -206,6 +208,7 @@ def train(
                 scaler.update()
             else:
                 optimizer.step()
+            scheduler.step()
 
             print(f"Epoch: {epoch}/{num_epochs}, Batch: {batch_idx}/{len(train_dataloader)}, Loss: {loss.item()}")
 

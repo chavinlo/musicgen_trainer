@@ -108,7 +108,9 @@ def train(
         save_step: int = None,
         grad_acc: int = 8,
         use_scaler: bool = False,
-        weight_decay: float = 1e-5
+        weight_decay: float = 1e-5,
+        warmup_steps=10,
+        batch_size=1,
 ):
     
     if bool(use_wandb) is True:
@@ -119,7 +121,7 @@ def train(
     model.lm = model.lm.to(torch.float32)  # important
         
     dataset = AudioDataset(dataset_path, no_label=no_label)
-    train_dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
+    train_dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     learning_rate = lr
     model.lm.train()
@@ -129,7 +131,7 @@ def train(
     #from paper
     optimizer = AdamW(model.lm.condition_provider.parameters() if tune_text else model.lm.parameters(),
                       lr=learning_rate, betas=(0.9, 0.95), weight_decay=weight_decay)
-    scheduler = get_scheduler("cosine", optimizer, 50, int(epochs * len(train_dataloader) / grad_acc))
+    scheduler = get_scheduler("cosine", optimizer, warmup_steps, int(epochs * len(train_dataloader) / grad_acc))
 
     criterion = nn.CrossEntropyLoss()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

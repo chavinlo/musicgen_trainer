@@ -193,6 +193,14 @@ def train(
                 masked_codes = codes.view(-1, 2048)[mask]
 
                 loss = criterion(masked_logits,masked_codes)
+            
+            if use_wandb is True:
+                run.log({
+                    "loss": loss.item(),
+                    "step": current_step,
+                })
+            
+            current_step += 1 / grad_acc
 
             # assert count_nans(masked_logits) == 0
 
@@ -214,16 +222,9 @@ def train(
 
             print(f"Epoch: {epoch}/{num_epochs}, Batch: {batch_idx}/{len(train_dataloader)}, Loss: {loss.item()}")
 
-            if use_wandb is True:
-                run.log({
-                    "loss": loss.item(),
-                    "step": current_step,
-                })
-
-            current_step += 1
 
             if save_models:
-                if current_step % save_step == 0:
+                if current_step = int(current_step) and int(current_step) % save_step == 0:
                     torch.save(model.lm.state_dict(), f"{save_path}/lm_{current_step}.pt")
 
     torch.save(model.lm.state_dict(), f"{save_path}/lm_final.pt")

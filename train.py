@@ -120,7 +120,7 @@ def train(
     scaler = torch.cuda.amp.GradScaler()
 
     #from paper
-    optimizer = AdamW(model.lm.condition_provider if tune_text else model.lm.parameters(),
+    optimizer = AdamW(model.lm.condition_provider.parameters() if tune_text else model.lm.parameters(),
                       lr=learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
 
     criterion = nn.CrossEntropyLoss()

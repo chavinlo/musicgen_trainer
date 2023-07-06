@@ -179,7 +179,8 @@ def train(
 
                 if use_cfg:
                     codes = torch.cat([inner_audio, inner_audio], dim=0)
-                codes = inner_audio
+                else:
+                    codes = inner_audio
 
                 all_codes.append(codes)
                 texts.append(open(l, "r").read().strip())

@@ -6,6 +6,13 @@ This is a trainer for MusicGen model. It's based on [this](https://github.com/ch
 
 Removing the gradient scaler, increasing the batch size and only training on conditional samples makes training work.
 
+TODO:
+ [ ] Add notebook
+ [ ] Add webdataset support
+ [ ] Try larger models
+ [ ] Add LoRA
+ [ ] Make rolling generation customizable
+
 ## Usage
 
 ### Dataset Creation

@@ -113,7 +113,7 @@ def train(
     weight_decay: float = 1e-5,
     warmup_steps: int = 10,
     batch_size: int = 10,
-    use_cfg: bool = False.
+    use_cfg: bool = False
 ):
     if use_wandb:
         run = wandb.init(project="audiocraft")

@@ -62,7 +62,7 @@ def preprocess_audio(audio_path, model: MusicGen, duration: int = 30):
     if wav.shape[1] < model.sample_rate * duration:
         return None
     end_sample = int(model.sample_rate * duration)
-    start_sample = random.randrange(0, wav.shape[1] - end_sample)
+    start_sample = random.randrange(0, max(wav.shape[1] - end_sample, 1))
     wav = wav[:, start_sample : start_sample + end_sample]
 
     assert wav.shape[0] == 1

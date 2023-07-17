@@ -3,7 +3,7 @@
 This is a trainer for MusicGen model. It's based on [this](https://github.com/chavinlo/musicgen_trainer).
 
 # Contributors
-- @mkualquiera and @neverix: actually got it working
+- [@mkualquiera](https://github.com/mkualquiera) and [@neverix](https://github.com/neverix): actually got it working
 - elyxlz: help with masks
 
 ## STATUS: MVP

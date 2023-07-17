@@ -2,6 +2,10 @@
 
 This is a trainer for MusicGen model. It's based on [this](https://github.com/chavinlo/musicgen_trainer).
 
+# Contributors
+- @mkualquiera and @neverix: actually got it working
+- elyxlz: help with masks
+
 ## STATUS: MVP
 
 Removing the gradient scaler, increasing the batch size and only training on conditional samples makes training work.
